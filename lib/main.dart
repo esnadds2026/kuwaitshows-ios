@@ -79,7 +79,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setMediaPlaybackRequiresUserGesture(false)
       ..loadRequest(Uri.parse('https://kuwaitshows.com'));
 
     _controller = controller;
