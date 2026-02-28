@@ -76,9 +76,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
+
+    final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setMediaPlaybackRequiresUserGesture(false)
       ..loadRequest(Uri.parse('https://kuwaitshows.com'));
+
+    _controller = controller;
   }
 
   @override
