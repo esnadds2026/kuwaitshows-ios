@@ -12,53 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainScreen(),
-    );
-  }
-}
-
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    WebViewScreen(),
-    FavoritesScreen(),
-    AboutScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Favorites",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: "About",
-          ),
-        ],
-      ),
+      home: WebViewScreen(),
     );
   }
 }
@@ -73,57 +27,87 @@ class WebViewScreen extends StatefulWidget {
 class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
 
+  bool isLoading = true;
+  bool hasError = false;
+
   @override
   void initState() {
     super.initState();
 
-    final controller = WebViewController()
+    _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            setState(() {
+              isLoading = true;
+              hasError = false;
+            });
+          },
+          onPageFinished: (url) {
+            setState(() {
+              isLoading = false;
+            });
+          },
+          onWebResourceError: (error) {
+            setState(() {
+              isLoading = false;
+              hasError = true;
+            });
+          },
+        ),
+      )
       ..loadRequest(Uri.parse('https://kuwaitshows.com'));
+  }
 
-    _controller = controller;
+  void reloadPage() {
+    setState(() {
+      hasError = false;
+      isLoading = true;
+    });
+
+    _controller.loadRequest(Uri.parse('https://kuwaitshows.com'));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Kuwait Shows")),
-      body: SafeArea(
-        child: WebViewWidget(controller: _controller),
+      appBar: AppBar(
+        title: const Text("Kuwait Shows"),
+        centerTitle: true,
       ),
-    );
-  }
-}
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
 
-class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
+          if (isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          "No favorites yet",
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("About")),
-      body: const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text(
-          "Kuwait Shows provides the latest offers and events in Kuwait.",
-          style: TextStyle(fontSize: 16),
-        ),
+          if (hasError)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Unable to load content",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Please check your internet connection.",
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: reloadPage,
+                    child: const Text("Retry"),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
